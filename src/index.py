@@ -7,11 +7,8 @@ from chunk import create_chunks
 from embeddings import load_embedding_model, create_embeddings
 
 
-# Project folders
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 CHROMA_DIR = PROJECT_DIR / "chroma_db"
-
-# ChromaDB collection name
 COLLECTION_NAME = "rag_documents"
 
 
@@ -42,9 +39,19 @@ def create_vector_database():
     print(f"Embedding dimensions: {embeddings.shape[1]}")
 
     print("\nConnecting to ChromaDB...")
-    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    client = chromadb.PersistentClient(
+        path=str(CHROMA_DIR)
+    )
 
-    collection = client.get_or_create_collection(
+    # Remove the previous collection so stale chunks
+    # from an older index cannot remain in the database.
+    try:
+        client.delete_collection(name=COLLECTION_NAME)
+        print("Previous collection removed.")
+    except Exception:
+        print("No previous collection found.")
+
+    collection = client.create_collection(
         name=COLLECTION_NAME,
         metadata={"hnsw:space": "cosine"},
     )
@@ -61,8 +68,7 @@ def create_vector_database():
         for chunk in chunks
     ]
 
-    # Upsert prevents duplicate IDs if the indexing script is run again.
-    collection.upsert(
+    collection.add(
         ids=ids,
         documents=texts,
         embeddings=embeddings.tolist(),

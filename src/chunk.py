@@ -1,13 +1,17 @@
 from ingest import load_documents
 
 
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 100
+CHUNK_SIZE = 250
+CHUNK_OVERLAP = 50
 
 
 def split_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     """
     Split text into word-based chunks with overlap.
+
+    Each chunk contains up to 250 words.
+    Consecutive chunks overlap by 50 words so that
+    information near chunk boundaries is not lost.
     """
 
     words = text.split()
@@ -43,7 +47,10 @@ def create_chunks(documents):
     for document in documents:
         text_chunks = split_text(document["text"])
 
-        for chunk_number, chunk_text in enumerate(text_chunks, start=1):
+        for chunk_number, chunk_text in enumerate(
+            text_chunks,
+            start=1,
+        ):
             chunks.append(
                 {
                     "chunk_id": (
